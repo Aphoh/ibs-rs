@@ -8,9 +8,5 @@ edition = "2018"
 
 [dependencies]
 
-pairing = {version = "0.16.0"}
-sodiumoxide = "0.2.6"
-rand_chacha = "0.2.2"
-ff = "0.6.0"
-group = "0.6.0"
-rand_core = "0.5.1"
+amcl_wrapper = "0.4"
+criterion = "0.3"

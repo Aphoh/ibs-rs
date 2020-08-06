@@ -4,28 +4,41 @@
 
 
 use super::*;
-use bls12_381::{Scalar, G1Projective, G1Affine, G2Projective, G2Affine, pairing};
-use std::ops::{Neg, Add};
+use pairing::Engine;
+use pairing::bls12_381::{Fr, FrRepr, G1, G1Affine, G2, G2Affine, G2Prepared, Bls12};
 
-pub fn setup() -> (Scalar, G2Projective) {
+pub fn setup() -> (Fr, G2) {
     let ta_secret = hash_to_scalar("TA Secret");
-    (ta_secret, G2Projective::generator().mul(ta_secret))
+    let mut ta_pk = G2::one();
+    ta_pk.mul_assign(ta_secret);
+    (ta_secret, ta_pk)
 }
 
-pub fn extract<B: AsRef<[u8]>>(identity: B, ta_secret: &Scalar) -> G1Projective {
-    hash_to_g1(identity.as_ref()).mul(ta_secret) 
+pub fn extract<B: AsRef<[u8]>>(identity: B, ta_secret: Fr) -> G1 {
+    let mut sid = hash_to_g1(identity.as_ref());
+    sid.mul_assign(ta_secret);
+    sid
 }
 
-pub fn sign<M: AsRef<[u8]>>(message: M, p1: &G1Affine, k: &Scalar, user_secret: &G1Projective) -> (G1Affine, Scalar) {
-    let r = pairing(&p1, &G2Affine::generator()).mul(k);
+pub fn sign<M: AsRef<[u8]>>(message: M, p1: &G1, k: &Fr, user_secret: &G1) -> (G1Affine, Fr) {
+    let rpair = Bls12::pairing(p1.clone(), G2Affine::one());
+    let repr: FrRepr = (*k).into();
+    let r = rpair.pow(repr);
     let v = hash_to_scalar([message.as_ref(), gt_as_bytes(r).as_slice()].concat());
-    let u = user_secret.mul(v) + p1.mul(k);
+    let mut u = *user_secret;
+    let mut p1_copy = *p1;
+    u.mul_assign(v.clone());
+    p1_copy.mul_assign(k.clone());
+    u.add_assign(&p1_copy);
     (u.into(), v)
 }
 
-pub fn verify<M: AsRef<[u8]>, B: AsRef<[u8]>>(message: M, u: &G1Affine, v: &Scalar, identity: B, ta_pub: &G2Affine) -> bool {
-    let user_pairing = pairing(&hash_to_g1(identity).into(), &ta_pub.neg());
-    let r = pairing(u, &G2Affine::generator()).add(user_pairing.mul(v));
+pub fn verify<M: AsRef<[u8]>, B: AsRef<[u8]>>(message: M, u: G1Affine, v: Fr, identity: B, neg_ta_pub_aff: G2Affine) -> bool {
+    let user_pairing: Fq12 = Bls12::pairing(hash_to_g1(identity), neg_ta_pub_aff);
+    let v_repr: FrRepr = v.into();
+    user_pairing.pow(v_repr);
+    let mut r = Bls12::pairing(u, G2Affine::one());
+    r.add_assign(&user_pairing);
     v.eq(&hash_to_scalar([message.as_ref(), gt_as_bytes(r).as_slice()].concat()))
 }
 
@@ -38,12 +51,12 @@ mod tests {
     #[test]
     fn test_correctness() {
         let (ta_secret, ta_pub_key) = setup();
-        let user_secret = extract(IDENT, &ta_secret); 
+        let user_secret = extract(IDENT, ta_secret); 
 
         let p1 = hash_to_g1("Sample P1");
         let k = hash_to_scalar("Random scalar");
         let (u_sig, v_sig) = sign(MSG, &p1.into(), &k, &user_secret);
 
-        assert!(verify(MSG, &u_sig, &v_sig, IDENT, &ta_pub_key.into()));
+        assert!(verify(MSG, u_sig, v_sig, IDENT, ta_pub_key.into()));
     }
 }

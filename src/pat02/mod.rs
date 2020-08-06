@@ -4,9 +4,10 @@
 //! instead of G2
 
 use super::*;
+use rand::{RngCore, CryptoRng};
 
-pub fn setup() -> (FieldElement, G2) {
-    let ta_secret = hash_to_scalar("TA Secret");
+pub fn setup<R: RngCore + CryptoRng>(rng: &mut R) -> (FieldElement, G2) {
+    let ta_secret = FieldElement::random_using_rng(rng);
     let ta_pub = G2::generator().scalar_mul_const_time(&ta_secret);
     (ta_secret, ta_pub)
 }
@@ -47,7 +48,7 @@ mod tests {
 
     #[test]
     fn test_correctness() {
-        let (ta_secret, ta_pub_key) = setup();
+        let (ta_secret, ta_pub_key) = setup(&mut rand::thread_rng());
         let user_secret = extract(IDENT, &ta_secret);
 
         let k = hash_to_scalar("Random scalar");

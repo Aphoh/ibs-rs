@@ -9,4 +9,17 @@ edition = "2018"
 [dependencies]
 
 amcl_wrapper = "0.4"
+rand = "0.7"
+
+[dev-dependencies]
+
 criterion = "0.3"
+
+[[bench]]
+name = "hess03"
+harness = false
+
+[[bench]]
+name = "pat02"
+harness = false
+

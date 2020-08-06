@@ -3,9 +3,10 @@
 //! [here](https://link.springer.com/content/pdf/10.1007/3-540-36492-7_20.pdf)
 
 use super::*;
+use rand::{RngCore, CryptoRng};
 
-pub fn setup() -> (FieldElement, G2) {
-    let ta_secret = hash_to_scalar("TA Secret");
+pub fn setup<R: RngCore + CryptoRng>(rng: &mut R) -> (FieldElement, G2) {
+    let ta_secret = FieldElement::random_using_rng(rng);
     let ta_pub = G2::generator().scalar_mul_const_time(&ta_secret);
     (ta_secret, ta_pub)
 }
@@ -48,13 +49,13 @@ mod tests {
 
     #[test]
     fn test_correctness() {
-        let (ta_secret, ta_pub_key) = setup();
+        let (ta_secret, ta_pub_key) = setup(&mut rand::thread_rng());
         let user_secret = extract(IDENT, &ta_secret);
 
         let p1 = hash_to_g1("Sample P1");
         let k = hash_to_scalar("Random scalar");
-        let (u_sig, v_sig) = sign(MSG, &p1.into(), &k, &user_secret);
+        let (u_sig, v_sig) = sign(MSG, &p1, &k, &user_secret);
 
-        assert!(verify(MSG, &u_sig, &v_sig, IDENT, &ta_pub_key.into()));
+        assert!(verify(MSG, &u_sig, &v_sig, IDENT, &ta_pub_key));
     }
 }

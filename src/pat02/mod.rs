@@ -4,7 +4,7 @@
 //! instead of G2
 
 use super::*;
-use rand::{RngCore, CryptoRng};
+use rand::{CryptoRng, RngCore};
 
 pub fn setup<R: RngCore + CryptoRng>(rng: &mut R) -> (FieldElement, G2) {
     let ta_secret = FieldElement::random_using_rng(rng);
@@ -31,7 +31,7 @@ where
 {
     let uv_pair = GT::ate_pairing(v, u);
 
-    let left_p1 =  G1::generator() * hash_to_scalar(message);
+    let left_p1 = G1::generator() * hash_to_scalar(message);
     let user_pub = hash_to_g1(identity);
     let u_hash = hash_to_scalar(u.to_bytes(false));
     let right_p1 = user_pub * u_hash;
@@ -55,8 +55,19 @@ mod tests {
         let (u_sig, v_sig) = sign(MSG, &k, &user_secret);
 
         assert!(verify(MSG, &u_sig, &v_sig, IDENT, &ta_pub_key));
-        assert!(!verify("Incorrect message", &u_sig, &v_sig, IDENT, &ta_pub_key));
-        assert!(!verify(MSG, &u_sig, &v_sig, "Incorrect Identity", &ta_pub_key));
+        assert!(!verify(
+            "Incorrect message",
+            &u_sig,
+            &v_sig,
+            IDENT,
+            &ta_pub_key
+        ));
+        assert!(!verify(
+            MSG,
+            &u_sig,
+            &v_sig,
+            "Incorrect Identity",
+            &ta_pub_key
+        ));
     }
 }
-

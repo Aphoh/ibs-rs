@@ -3,7 +3,7 @@
 //! [here](https://link.springer.com/content/pdf/10.1007/3-540-36492-7_20.pdf)
 
 use super::*;
-use rand::{RngCore, CryptoRng};
+use rand::{CryptoRng, RngCore};
 
 pub fn setup<R: RngCore + CryptoRng>(rng: &mut R) -> (FieldElement, G2) {
     let ta_secret = FieldElement::random_using_rng(rng);

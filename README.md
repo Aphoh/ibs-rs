@@ -4,6 +4,9 @@ A couple of implementations of Identity-Based Signature Schemes (IBS) with linke
 
 This should not be used in production and is simple a proof-of-concept I wrote to help me understand these schemes.
 
+### Benchmarks
+Benchmarks are visible [here](https://aphoh.github.io/ibs-rs/)
+
 Implementations:
 
 - [x] [Hes02](https://link.springer.com/content/pdf/10.1007/3-540-36492-7_20.pdf)
